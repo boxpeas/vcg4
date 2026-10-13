@@ -1,0 +1,139 @@
+cis practical 4-Feature Extraction and Image Analysis for Devanagari
+Characters
+
+1- read image 
+
+import cv2
+import os
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+path = r"C:\Users\hp\Downloads\devanagari+handwritten+character+dataset (1)\DevanagariHandwrittenCharacterDataset\Train"
+
+classes = [c for c in os.listdir(path)
+           if os.path.isdir(os.path.join(path, c))]
+
+folder = os.path.join(path, classes[0])
+file = os.listdir(folder)[0]
+img_path = os.path.join(folder, file)
+
+img = cv2.imread(img_path)
+gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+plt.imshow(gray, cmap="gray")
+plt.title("Character")
+plt.axis("off")
+plt.show()
+
+
+2-pixel value analysis and basic features 
+
+print("Pixel Values:")
+print(gray)
+
+print("Minimum:", np.min(gray))
+print("Maximum:", np.max(gray))
+print("Mean:", np.mean(gray))
+print("Standard Deviation:", np.std(gray))
+
+
+
+3-plot histogram 
+
+plt.hist(gray.ravel(), bins=256)
+plt.title("Pixel Intensity Histogram")
+plt.xlabel("Pixel Value")
+plt.ylabel("Frequency")
+plt.show()
+
+
+4-edge detection 
+
+edges = cv2.Canny(gray, 100, 200)
+
+plt.imshow(edges, cmap="gray")
+plt.title("Edge Detection")
+plt.axis("off")
+plt.show()
+
+
+5-contour detection 
+
+_, binary = cv2.threshold(gray, 127, 255, cv2.THRESH_BINARY_INV)
+
+contours, _ = cv2.findContours(
+    binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+)
+
+result = cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR)
+cv2.drawContours(result, contours, -1, (0, 255, 0), 1)
+
+plt.imshow(cv2.cvtColor(result, cv2.COLOR_BGR2RGB))
+plt.title("Contour Detection")
+plt.axis("off")
+plt.show()
+
+print("Number of contours:", len(contours))
+
+
+6-bounding box 
+
+_, binary = cv2.threshold(gray, 127, 255, cv2.THRESH_BINARY_INV)
+
+contours, _ = cv2.findContours(
+    binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+)
+
+result = cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR)
+
+for c in contours:
+    x, y, w, h = cv2.boundingRect(c)
+    cv2.rectangle(result, (x, y), (x+w, y+h), (0, 255, 0), 1)
+
+plt.imshow(cv2.cvtColor(result, cv2.COLOR_BGR2RGB))
+plt.title("Bounding Box Detection")
+plt.axis("off")
+plt.show()
+
+
+7-Extract features from multiple images
+
+data = []
+
+for c in classes:
+    folder = os.path.join(path, c)
+
+    for file in os.listdir(folder)[:5]:
+        img = cv2.imread(os.path.join(folder, file), 0)
+
+        if img is not None:
+            data.append([
+                file, c, np.mean(img), np.std(img),
+                np.min(img), np.max(img)
+            ])
+
+df = pd.DataFrame(data, columns=[
+    "Image", "Character", "Mean", "Std", "Min", "Max"
+])
+
+print(df.head())
+
+8-extract features into csv
+
+df.to_csv("features.csv", index=False)
+print("Features saved successfully")
+
+
+
+9-feature visualization
+
+plt.scatter(df["Mean"], df["Std"])
+plt.title("Feature Visualization")
+plt.xlabel("Mean Pixel Intensity")
+plt.ylabel("Standard Deviation")
+plt.show()
+
+
+
+
